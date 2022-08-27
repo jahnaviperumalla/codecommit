@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CI/CD pipeline for GitHub projects
+Resources:
+  CodeBuildServiceRole:
+   Type: AWS::IAM::Role
+   Properties: 
+    AssumeRolePolicyDocument:
+     Version: 2012-10-17
+     Statement:
+       -Effect: Allow
+        Principal:
+         Service: codebuild.amazonaws.com
+        Action: 'sts:AssumeRole'
+    Policies:
+     Version: 2012-10-17
+     Statement:
+      - Sid: s3 full acess
+        Effect: Allow
+        Action:
+         - 's3:*'
+         - 's3-object-lambda:*'
+        Resource: '*'
+      - Sid: ec2 full access
+        Action: 'ec2:*'
+        Effect: Allow
+        Resource: '*'
+      - Effect: Allow
+        Action: 'elasticloadbalancing:*'
+        Resource: '*'
+      - Effect: Allow
+        Action: 'cloudwatch:*'
+        Resource: '*'
+      - Effect: Allow
+        Action: 'autoscaling:*'
+        Resource: '*'
+      - Effect: Allow
+        Action: 'iam:CreateServiceLinkedRole'
+        Resource: '*'
+        Condition:
+         StringEquals:
+         'iam:AWSServiceName':
+           - autoscaling.amazonaws.com
+           - ec2scheduled.amazonaws.com
+           - elasticloadbalancing.amazonaws.com
+           - spot.amazonaws.com
+           - spotfleet.amazonaws.com
+           - transitgateway.amazonaws.com
+      - Sid: Cloud watch logs
+        Action:
+         - 'logs:*'
+        Effect: Allow
+        Resource: '*'
+  Project:
+  Type: AWS::CodeBuild::Project
+  Properties:
+    Name: myProjectName
+    Description: A description about my project
+    ServiceRole: !GetAtt CodeBuildServiceRole
+    Artifacts:
+      Type: no_artifacts
+    Environment:
+      Type: LINUX_CONTAINER
+      ComputeType: BUILD_GENERAL1_SMALL
+      Image: aws/codebuild/java:openjdk-8
+      EnvironmentVariables:
+      - Name: varName
+        Type: varType
+        Value: varValue
+    Source:
+      Location: https://git-codecommit.us-west-1.amazonaws.com/v1/repos/janu
+      Type: CodeCommit
+      BuildSpec: buildspec.yaml
+      
+
+    
